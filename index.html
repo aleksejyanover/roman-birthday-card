@@ -504,7 +504,6 @@
   <button class="player-close" onclick="closePlayer()">✕</button>
 
   <div class="player-title">🎶 Поздравительная песня 🎶</div>
-  <div id="voiceStatus" style="font-size:13px;color:rgba(212,175,55,0.6);margin-bottom:15px;font-family:Inter,sans-serif;letter-spacing:2px;">🎤 Мужской голос поёт</div>
 
   <div class="eq-container" id="eqContainer">
     <div class="eq-bar" style="--min-h:4px;--max-h:30px;--dur:0.4s"></div>
@@ -668,81 +667,6 @@ let songPausedAt = 0;
 let animationFrameId = null;
 let scheduledNotes = [];
 const SONG_DURATION = 166;
-
-// ===== VOICE (SPEECH SYNTHESIS) =====
-let voiceReady = false;
-let maleVoice = null;
-let spokenLines = new Set();
-let speechQueue = [];
-
-function initVoice() {
-  return new Promise(resolve => {
-    const voices = speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      findMaleVoice(voices);
-      resolve();
-    } else {
-      speechSynthesis.onvoiceschanged = () => {
-        findMaleVoice(speechSynthesis.getVoices());
-        resolve();
-      };
-    }
-  });
-}
-
-function findMaleVoice(voices) {
-  const ruVoices = voices.filter(v => v.lang.startsWith('ru'));
-  const maleNames = ['milena','maxim','sergei','dmitry','alexe','roman','aleksandr','boris','viktor','evgeny','grigory','mikhail','nikolai','pavel','stanislav','vladislav','yuri'];
-  
-  maleVoice = ruVoices.find(v => {
-    const n = v.name.toLowerCase();
-    return maleNames.some(m => n.includes(m));
-  }) || ruVoices.find(v => v.name.toLowerCase().includes('male')) || ruVoices[0] || null;
-  
-  voiceReady = !!maleVoice;
-}
-
-function speakLine(text, delayMs) {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      if (!isPlaying) { resolve(); return; }
-      const u = new SpeechSynthesisUtterance(text);
-      if (maleVoice) u.voice = maleVoice;
-      u.lang = 'ru-RU';
-      u.rate = 0.85;
-      u.pitch = 0.7;
-      u.volume = 1.0;
-      u.onend = () => resolve();
-      u.onerror = () => resolve();
-      speechSynthesis.speak(u);
-    }, delayMs);
-  });
-}
-
-function scheduleVoices(offset) {
-  speechSynthesis.cancel();
-  spokenLines.clear();
-  
-  SONG_LYRICS.forEach((line, i) => {
-    const delay = Math.max(0, (line.time - offset) * 1000);
-    if (delay >= 0 && (line.time - offset) >= -0.5) {
-      speakLine(line.text, delay);
-    }
-  });
-}
-
-function stopVoice() {
-  speechSynthesis.cancel();
-  spokenLines.clear();
-}
-
-function pauseVoice() {
-  speechSynthesis.pause();
-}
-
-function resumeVoice() {
-  speechSynthesis.resume();
-}
 
 const C4=261.63, D4=293.66, E4=329.63, F4=349.23, G4=392.00, A4=440.00, B4=493.88;
 const C5=523.25, D5=587.33, E5=659.25, F5=698.46, G5=783.99, A5=880.00;
@@ -928,9 +852,8 @@ function stopAllNotes() {
 }
 
 // ===== PLAYER CONTROLS =====
-async function openPlayer() {
+function openPlayer() {
   document.getElementById('playerOverlay').classList.add('active');
-  await initVoice();
   initAudio();
   startSong();
 }
@@ -947,7 +870,6 @@ function startSong() {
   isPlaying = true;
   songStartTime = audioCtx.currentTime - songPausedAt;
   scheduleAllNotes(songPausedAt);
-  scheduleVoices(songPausedAt);
   document.getElementById('playPauseBtn').textContent = '⏸';
   document.getElementById('eqContainer').classList.add('playing');
   updateProgress();
@@ -958,7 +880,6 @@ function pauseSong() {
   isPlaying = false;
   songPausedAt = audioCtx.currentTime - songStartTime;
   stopAllNotes();
-  pauseVoice();
   document.getElementById('playPauseBtn').textContent = '▶';
   document.getElementById('eqContainer').classList.remove('playing');
   cancelAnimationFrame(animationFrameId);
@@ -968,7 +889,6 @@ function stopSong() {
   isPlaying = false;
   songPausedAt = 0;
   stopAllNotes();
-  stopVoice();
   document.getElementById('playPauseBtn').textContent = '▶';
   document.getElementById('eqContainer').classList.remove('playing');
   document.getElementById('progressFill').style.width = '0%';
