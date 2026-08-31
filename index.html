@@ -169,6 +169,47 @@
     margin-bottom: 20px;
   }
 
+  /* === FUTURE SECTION === */
+  .future-sec {
+    margin: 28px auto 0;
+    display: none;
+  }
+  .future-sec.visible {
+    display: block;
+    animation: fadeIn 0.6s ease both;
+  }
+  .future-box {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 30px rgba(0,0,0,0.5);
+    cursor: pointer;
+    max-width: 420px;
+    margin: 0 auto;
+    animation: photoIn 0.6s ease both;
+  }
+  .future-box img {
+    width: 100%;
+    display: block;
+    transition: transform 0.5s ease;
+  }
+  .future-box:hover img {
+    transform: scale(1.05);
+  }
+  .future-caption {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(10,10,30,0.9));
+    color: #f5e6a3;
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 30px 20px 14px;
+    text-align: center;
+  }
+
   .gallery-grid {
     display: flex;
     gap: 12px;
@@ -475,6 +516,14 @@
         </div>
       </div>
 
+      <div class="future-sec" id="futureSec">
+        <div class="gallery-title">🔮 Будущее Романа</div>
+        <div class="future-box">
+          <img src="future.jpg" alt="Будущее Романа" onclick="openLightbox('future.jpg')" loading="lazy">
+          <div class="future-caption">Всё ещё впереди!</div>
+        </div>
+      </div>
+
       <div class="divider"></div>
 
       <div class="bottom-text">С любовью и теплом</div>
@@ -486,6 +535,9 @@
         </button>
         <button class="song-btn-main" id="songBtn" onclick="openPlayer()">
           🎵 Песня
+        </button>
+        <button class="song-btn-main" id="futureBtn" onclick="toggleFuture()">
+          🔮 Будущее
         </button>
       </div>
     </div>
@@ -544,6 +596,20 @@ function toggleGallery() {
   } else {
     gallery.classList.remove('visible');
     btn.textContent = '📸 Воспоминания';
+  }
+}
+
+let futureVisible = false;
+function toggleFuture() {
+  const sec = document.getElementById('futureSec');
+  const btn = document.getElementById('futureBtn');
+  futureVisible = !futureVisible;
+  if (futureVisible) {
+    sec.classList.add('visible');
+    btn.textContent = '🔮 Скрыть';
+  } else {
+    sec.classList.remove('visible');
+    btn.textContent = '🔮 Будущее';
   }
 }
 
