@@ -149,10 +149,115 @@
     animation: fadeIn 1s 1.7s both;
   }
 
+  /* === PHOTO GALLERY === */
+  .gallery {
+    margin: 28px auto 0;
+    display: none;
+  }
+  .gallery.visible {
+    display: block;
+    animation: fadeIn 0.6s ease both;
+  }
+
+  .gallery-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(212, 175, 55, 0.7);
+    margin-bottom: 20px;
+  }
+
+  .gallery-grid {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .gallery-item {
+    width: 140px;
+    height: 140px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .gallery-item:hover {
+    transform: scale(1.08) rotate(-1deg);
+    border-color: #d4af37;
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.3);
+    z-index: 3;
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .gallery-item:hover img {
+    transform: scale(1.1);
+  }
+
+  .gallery-item.tall {
+    width: 120px;
+    height: 180px;
+    border-radius: 14px;
+  }
+
+  .gallery-item:nth-child(1) { animation: photoIn 0.6s 1.6s both; }
+  .gallery-item:nth-child(2) { animation: photoIn 0.6s 1.8s both; }
+  .gallery-item:nth-child(3) { animation: photoIn 0.6s 2.0s both; }
+
+  @keyframes photoIn {
+    from { opacity: 0; transform: scale(0.8) rotate(-5deg); }
+    to { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  /* Lightbox */
+  .lightbox {
+    display: none;
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 200;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .lightbox.active { display: flex; }
+  .lightbox img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    animation: zoomIn 0.3s ease;
+  }
+  @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .lightbox-close {
+    position: absolute; top: 24px; right: 28px;
+    background: none; border: 1px solid rgba(255,255,255,0.3);
+    color: white; font-size: 24px; width: 44px; height: 44px;
+    border-radius: 50%; cursor: pointer; transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lightbox-close:hover { background: rgba(255,255,255,0.15); }
+
+  @media (max-width: 600px) {
+    .gallery-item { width: 100px; height: 100px; }
+    .gallery-item.tall { width: 85px; height: 130px; }
+  }
+
   .buttons-row {
     display: flex; gap: 14px; justify-content: center;
     flex-wrap: wrap; margin-top: 24px;
-    animation: fadeIn 1s 1.9s both;
+    animation: fadeIn 1s 2.2s both;
   }
 
   .confetti-btn, .song-btn-main {
@@ -354,18 +459,42 @@
         <li>Новых побед и достижений!</li>
       </ul>
 
+      <div class="gallery">
+        <div class="gallery-title">Наши моменты</div>
+        <div class="gallery-grid">
+          <div class="gallery-item" onclick="openLightbox('photo1.jpg')">
+            <img src="photo1.jpg" alt="Роман" loading="lazy">
+          </div>
+          <div class="gallery-item tall" onclick="openLightbox('photo3.jpg')">
+            <img src="photo3.jpg" alt="Роман" loading="lazy">
+          </div>
+          <div class="gallery-item" onclick="openLightbox('photo2.jpg')">
+            <img src="photo2.jpg" alt="Роман" loading="lazy">
+          </div>
+        </div>
+      </div>
+
       <div class="divider"></div>
 
       <div class="bottom-text">С любовью и теплом</div>
 
       <div class="buttons-row">
         <button class="confetti-btn" onclick="launchConfetti()">Поздравить! 🎉</button>
+        <button class="song-btn-main" id="memoriesBtn" onclick="toggleGallery()">
+          📸 Воспоминания
+        </button>
         <button class="song-btn-main" id="songBtn" onclick="openPlayer()">
-          🎵 Поздравительная песня
+          🎵 Песня
         </button>
       </div>
     </div>
   </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="Роман">
 </div>
 
 <!-- SONG PLAYER -->
@@ -401,6 +530,39 @@
 </div>
 
 <script>
+// ===== LIGHTBOX =====
+let galleryVisible = false;
+
+function toggleGallery() {
+  const gallery = document.querySelector('.gallery');
+  const btn = document.getElementById('memoriesBtn');
+  galleryVisible = !galleryVisible;
+  if (galleryVisible) {
+    gallery.classList.add('visible');
+    btn.textContent = '📸 Скрыть';
+  } else {
+    gallery.classList.remove('visible');
+    btn.textContent = '📸 Воспоминания';
+  }
+}
+
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('active');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+}
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape') {
+    closeLightbox();
+    closePlayer();
+  }
+  if (e.code === 'Space' && document.getElementById('playerOverlay').classList.contains('active')) {
+    e.preventDefault(); togglePlay();
+  }
+});
+
 // ===== STARS =====
 const starsEl = document.getElementById('stars');
 for (let i = 0; i < 80; i++) {
@@ -787,13 +949,6 @@ function updateLyrics() {
   renderLyrics(idx);
 }
 
-// ===== KEYBOARD =====
-document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && document.getElementById('playerOverlay').classList.contains('active')) {
-    e.preventDefault(); togglePlay();
-  }
-  if (e.code === 'Escape') closePlayer();
-});
 </script>
 </body>
 </html>
