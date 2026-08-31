@@ -316,20 +316,8 @@
   .player-title {
     font-family: 'Playfair Display', serif;
     font-size: 22px; color: #d4af37; letter-spacing: 3px;
-    text-transform: uppercase; margin-bottom: 10px;
+    text-transform: uppercase; margin-bottom: 30px;
   }
-
-  .voice-desc {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px; color: rgba(255,255,255,0.8);
-    margin-bottom: 24px;
-  }
-
-  #voiceAudio {
-    filter: drop-shadow(0 0 15px rgba(212,175,55,0.3));
-    border-radius: 12px;
-  }
-  #voiceAudio::-webkit-media-controls-panel { background: #1c1c3a; }
 
   .eq-container {
     display: flex; align-items: flex-end; gap: 4px;
@@ -515,14 +503,31 @@
   <div class="player-bg-particles" id="bgParticles"></div>
   <button class="player-close" onclick="closePlayer()">✕</button>
 
-  <div class="player-title">🎤 Поздравление от меня 🎤</div>
+  <div class="player-title">🎶 Поздравительная песня 🎶</div>
 
-  <div class="voice-desc">Эти слова я записал специально для тебя!</div>
+  <div class="eq-container" id="eqContainer">
+    <div class="eq-bar" style="--min-h:4px;--max-h:30px;--dur:0.4s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:55px;--dur:0.55s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:40px;--dur:0.35s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:65px;--dur:0.5s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:35px;--dur:0.45s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:50px;--dur:0.38s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:60px;--dur:0.52s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:42px;--dur:0.42s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:55px;--dur:0.48s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:30px;--dur:0.36s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:48px;--dur:0.54s"></div>
+    <div class="eq-bar" style="--min-h:4px;--max-h:38px;--dur:0.4s"></div>
+  </div>
 
-  <audio id="voiceAudio" controls playsinline style="width:90%;max-width:400px;margin-bottom:20px;">
-    <source src="voice.mp3" type="audio/mpeg">
-    Ваш браузер не поддерживает аудио.
-  </audio>
+  <div class="lyrics-container" id="lyricsContainer"></div>
+
+  <div class="player-controls">
+    <button class="play-pause-btn" id="playPauseBtn" onclick="togglePlay()">▶</button>
+    <div class="progress-bar" id="progressBar" onclick="seekSong(event)">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -552,7 +557,10 @@ function closeLightbox() {
 document.addEventListener('keydown', e => {
   if (e.code === 'Escape') {
     closeLightbox();
-    document.getElementById('playerOverlay').classList.remove('active');
+    closePlayer();
+  }
+  if (e.code === 'Space' && document.getElementById('playerOverlay').classList.contains('active')) {
+    e.preventDefault(); togglePlay();
   }
 });
 
@@ -594,13 +602,352 @@ for (let i = 0; i < 20; i++) {
   document.getElementById('bgParticles').appendChild(p);
 }
 
-// ===== VOICE PLAYER =====
+// ===== SONG LYRICS =====
+const SONG_LYRICS = [
+  // Куплет 1
+  { text: "Тридцать первый — август, лето!", time: 0, verse: "Куплет 1" },
+  { text: "Роману — тридцать восемь!", time: 4 },
+  { text: "Мужик в расцвете сил, братцы,", time: 8 },
+  { text: "Сердце горит — не потухнет!", time: 12 },
+
+  // Пред-припев
+  { text: "Ведь в тридцать восемь — это классно:", time: 17, verse: "Пред-припев" },
+  { text: "Опыт, сила и характер!", time: 21 },
+  { text: "А ещё — улыбка солнышка,", time: 25 },
+  { text: "И в душе не гаснет факел!", time: 29 },
+
+  // Припев
+  { text: "С днём рождения, Роман!", time: 34, verse: "Припев" },
+  { text: "Ты — мужик, ты — капитан!", time: 38 },
+  { text: "Пусть тридцать восемь — не приговор,", time: 42 },
+  { text: "Но любой год — как подарок!", time: 46 },
+  { text: "С днём рождения, Роман!", time: 50 },
+  { text: "Ты лучший мужик во всём!", time: 54 },
+
+  // Куплет 2
+  { text: "Тебе не нужна диета,", time: 60, verse: "Куплет 2" },
+  { text: "Ты в ударе — да здравствует!", time: 64 },
+  { text: "Тридцать восемь — это старт,", time: 68 },
+  { text: "А не финишная черта!", time: 72 },
+
+  // Пред-припев 2
+  { text: "Жена считает — красавчик,", time: 77, verse: "Пред-припев" },
+  { text: "Друзья — что ты наш братишка!", time: 81 },
+  { text: "А ты — Рома-легенда наша,", time: 85 },
+  { text: "Для которого нет преград!", time: 89 },
+
+  // Припев 2
+  { text: "С днём рождения, Роман!", time: 94, verse: "Припев" },
+  { text: "Пусть сбудется каждый план!", time: 98 },
+  { text: "Здоровья — до потолка,", time: 102 },
+  { text: "Денег — как у миллионера!", time: 106 },
+  { text: "С днём рождения, Роман!", time: 110 },
+  { text: "Любви тебе — целый океан!", time: 114 },
+
+  // Бридж
+  { text: "А если вдруг станет грустно...", time: 122, verse: "Бридж" },
+  { text: "Вспомни: тебе всего 38!", time: 126 },
+  { text: "Впереди ещё столько побед,", time: 130 },
+  { text: "Что не вместит никакой бокал!", time: 134 },
+
+  // Финальный припев
+  { text: "С днём рождения, РОМАН!", time: 140, verse: "Финал" },
+  { text: "Ты — лев, ты — орёл, ты — тигр!", time: 144 },
+  { text: "Пусть каждый день будет ярким,", time: 148 },
+  { text: "А ночи — полны звёзд и кайфа!", time: 152 },
+  { text: "С днём рождения, Роман!", time: 156 },
+  { text: "ТРИДЦАТЬ ВОСЕМЬ ЛЕТ СЧАСТЬЯ!", time: 160 },
+];
+
+// ===== MELODY SYNTHESIS =====
+let audioCtx = null;
+let isPlaying = false;
+let songStartTime = 0;
+let songPausedAt = 0;
+let animationFrameId = null;
+let scheduledNotes = [];
+const SONG_DURATION = 166;
+
+const C4=261.63, D4=293.66, E4=329.63, F4=349.23, G4=392.00, A4=440.00, B4=493.88;
+const C5=523.25, D5=587.33, E5=659.25, F5=698.46, G5=783.99, A5=880.00;
+const G3=196.00, A3=220.00, B3=246.94, F3=174.61, E3=164.81;
+
+function generateSong() {
+  const notes = [];
+  const b = 0.5;
+  const n = (f, t, d, tp='sine', v=0.15) => notes.push([f,t,d,tp,v]);
+
+  // Intro (0-4s)
+  [C4,E4,G4,C5].forEach((f,i) => n(f, i*b, b*0.9, 'sine', 0.12));
+
+  // Verse 1 (4-17s)
+  [[C4/2,4],[C4/2,5],[C4/2,6],[C4/2,7],[G3,8],[G3,9],[G3,10],[G3,11],
+   [A3,12],[A3,13],[F3,14],[F3,15],[G3,16]].forEach(([f,t])=>n(f,t,b*0.9,'triangle',0.18));
+
+  [[E4,4,.5],[G4,4.5,.5],[A4,5,.5],[G4,5.5,1],
+   [E4,7,.5],[D4,7.5,.5],[C4,8,1],
+   [E4,9,.5],[G4,9.5,.5],[C5,10,1],
+   [B4,11,.5],[A4,11.5,.5],[G4,12,1.5],
+   [A4,14,.5],[G4,14.5,.5],[E4,15,1],[D4,16,1]
+  ].forEach(([f,t,d])=>n(f,t,d,'sine',0.14));
+
+  // Pre-chorus (17-34s)
+  [[F3,17],[F3,18],[G3,19],[G3,20],[A3,21],[A3,22],[G3,23],[G3,24],
+   [F3,25],[F3,26],[G3,27],[G3,28],[A3,29],[G3,30],[F3,31],[E3,32]
+  ].forEach(([f,t])=>n(f,t,b,'triangle',0.16));
+
+  [[F4,17,.5],[A4,17.5,.5],[C5,18,1],
+   [B4,19,.5],[A4,19.5,.5],[G4,20,1],
+   [A4,21,.5],[C5,21.5,.5],[E5,22,1],
+   [D5,23,.5],[C5,23.5,.5],[B4,24,1],
+   [A4,25,.5],[G4,25.5,.5],[A4,26,1],
+   [G4,27,.5],[E4,27.5,.5],[C4,28,1.5],
+   [D4,30,.5],[E4,30.5,.5],[F4,31,1],[G4,32,1.5]
+  ].forEach(([f,t,d])=>n(f,t,d,'sine',0.14));
+
+  // Chorus (34-60s)
+  [[C4/2,34],[C4/2,35],[G3,36],[G3,37],[A3,38],[A3,39],[E3,40],[E3,41],
+   [F3,42],[F3,43],[G3,44],[G3,45],[C4/2,46],[C4/2,47],[G3,48],[G3,49],
+   [A3,50],[A3,51],[F3,52],[F3,53],[G3,54],[G3,55],[C4/2,56],[C4/2,57],[F3,58],[G3,59]
+  ].forEach(([f,t])=>n(f,t,b,'triangle',0.2));
+
+  [[C5,34,1],[E5,35,.5],[D5,35.5,.5],[C5,36,1],
+   [G4,37,1],[A4,38,.5],[B4,38.5,.5],[C5,39,1],
+   [E5,40,1],[D5,41,1],
+   [C5,42,.5],[B4,42.5,.5],[A4,43,1],[G4,44,1.5],
+   [C5,46,1],[E5,47,.5],[G5,47.5,.5],[E5,48,1],
+   [D5,49,1],[C5,50,.5],[B4,50.5,.5],[A4,51,1],
+   [G4,52,1],[A4,53,1],
+   [G4,54,.5],[E4,54.5,.5],[C4,55,1.5],
+   [C4,57,.5],[E4,57.5,.5],[G4,58,1],[C5,59,1]
+  ].forEach(([f,t,d])=>n(f,t,d,'sine',0.16));
+
+  for(let t=34;t<60;t+=b){n(8000+Math.random()*2000,t,.05,'sawtooth',0.02);}
+
+  // Verse 2 (60-77s)
+  [[C4/2,60],[C4/2,61],[C4/2,62],[C4/2,63],[A3,64],[A3,65],[A3,66],[A3,67],
+   [F3,68],[F3,69],[G3,70],[G3,71],[C4/2,72],[C4/2,73],[C4/2,74],[C4/2,75]
+  ].forEach(([f,t])=>n(f,t,b*0.9,'triangle',0.18));
+
+  [[G4,60,.5],[A4,60.5,.5],[C5,61,1],
+   [B4,62,.5],[A4,62.5,.5],[G4,63,1],
+   [A4,64,.5],[C5,64.5,.5],[E5,65,1],
+   [D5,66,.5],[C5,66.5,.5],[B4,67,1],
+   [A4,68,.5],[G4,68.5,.5],[F4,69,1],[G4,70,1.5],
+   [E4,72,.5],[G4,72.5,.5],[C5,73,1],
+   [B4,74,.5],[A4,74.5,.5],[G4,75,1.5]
+  ].forEach(([f,t,d])=>n(f,t,d,'sine',0.14));
+
+  // Pre-chorus 2 (77-94s)
+  [[F3,77],[F3,78],[G3,79],[G3,80],[A3,81],[A3,82],[G3,83],[G3,84],
+   [F3,85],[F3,86],[G3,87],[G3,88],[A3,89],[G3,90],[F3,91],[E3,92]
+  ].forEach(([f,t])=>n(f,t,b,'triangle',0.16));
+
+  [[F4,77,.5],[A4,77.5,.5],[C5,78,1],
+   [B4,79,.5],[A4,79.5,.5],[G4,80,1],
+   [A4,81,.5],[C5,81.5,.5],[E5,82,1],
+   [D5,83,.5],[C5,83.5,.5],[B4,84,1],
+   [A4,85,.5],[G4,85.5,.5],[A4,86,1],
+   [G4,87,.5],[E4,87.5,.5],[C4,88,1.5],
+   [D4,90,.5],[E4,90.5,.5],[F4,91,1],[G4,92,1.5]
+  ].forEach(([f,t,d])=>n(f,t,d,'sine',0.14));
+
+  // Chorus 2 (94-120s)
+  [[C4/2,94],[C4/2,95],[G3,96],[G3,97],[A3,98],[A3,99],[E3,100],[E3,101],
+   [F3,102],[F3,103],[G3,104],[G3,105],[C4/2,106],[C4/2,107],[G3,108],[G3,109],
+   [A3,110],[A3,111],[F3,112],[F3,113],[G3,114],[G3,115],[C4/2,116],[C4/2,117],[F3,118],[G3,119]
+  ].forEach(([f,t])=>n(f,t,b,'triangle',0.2));
+
+  [[C5,94,1],[E5,95,.5],[D5,95.5,.5],[C5,96,1],
+   [G4,97,1],[A4,98,.5],[B4,98.5,.5],[C5,99,1],
+   [E5,100,1],[D5,101,1],
+   [C5,102,.5],[B4,102.5,.5],[A4,103,1],[G4,104,1.5],
+   [C5,106,1],[E5,107,.5],[G5,107.5,.5],[E5,108,1],
+   [D5,109,1],[C5,110,.5],[B4,110.5,.5],[A4,111,1],
+   [G4,112,1],[A4,113,1],
+   [G4,114,.5],[E4,114.5,.5],[C4,115,1.5],
+   [C4,117,.5],[E4,117.5,.5],[G4,118,1],[C5,119,1]
+  ].forEach(([f,t,d])=>n(f,t,d,'sine',0.16));
+
+  for(let t=94;t<120;t+=b){n(8000+Math.random()*2000,t,.05,'sawtooth',0.02);}
+
+  // Bridge (122-140s) - softer
+  [[A3,122],[A3,124],[F3,126],[F3,128],[G3,130],[G3,132],[E3,134],[E3,136],[F3,138],[G3,139]
+  ].forEach(([f,t])=>n(f,t,b*2,'triangle',0.15));
+
+  [[A4,122,1.5],[G4,124,1],[F4,125,1],
+   [E4,126,1.5],[F4,128,1],[G4,129,1],
+   [A4,130,1.5],[G4,132,1],[E4,133,1],
+   [C4,134,2],
+   [D4,136,1],[E4,137,1],[F4,138,1],[G4,139,1]
+  ].forEach(([f,t,d])=>n(f,t,d,'sine',0.13));
+
+  // Final Chorus (140-166s)
+  [[C4/2,140],[C4/2,141],[G3,142],[G3,143],[A3,144],[A3,145],[E3,146],[E3,147],
+   [F3,148],[F3,149],[G3,150],[G3,151],[C4/2,152],[C4/2,153],[G3,154],[G3,155],
+   [A3,156],[A3,157],[F3,158],[F3,159],[G3,160],[G3,161],[C4/2,162],[C4/2,163]
+  ].forEach(([f,t])=>{n(f,t,b,'triangle',0.22);n(f*2,t,b,'sine',0.06);});
+
+  [[C5,140,1],[E5,141,.5],[D5,141.5,.5],[C5,142,1],
+   [G4,143,1],[A4,144,.5],[B4,144.5,.5],[C5,145,1],
+   [E5,146,1],[D5,147,1],
+   [C5,148,.5],[B4,148.5,.5],[A4,149,1],[G4,150,1.5],
+   [C5,152,1],[E5,153,.5],[G5,153.5,.5],[E5,154,1],
+   [D5,155,1],[C5,156,.5],[B4,156.5,.5],[A4,157,1],
+   [G4,158,1],[A4,159,1],
+   [G4,160,.5],[E4,160.5,.5],[C4,161,1.5]
+  ].forEach(([f,t,d])=>{n(f,t,d,'sine',0.18);n(f*2,t,d,'sine',0.04);});
+
+  // Ending flourish
+  [C5,E5,G5,C5*2].forEach((f,i)=>n(f,163+i*.3,1.5-i*.2,'sine',0.12));
+
+  // Chord pads
+  const pads = [
+    [[C4,E4,G4],4,4],[[G3,B3,D4],8,4],[[A3,C4,E4],12,4],[[F3,A3,C4],16,2],
+    [[F3,A3,C4],17,2],[[G3,B3,D4],19,2],[[A3,C4,E4],21,2],[[G3,B3,D4],23,2],
+    [[F3,A3,C4],25,2],[[G3,B3,D4],27,2],[[A3,C4,E4],29,2],[[E3,G3,B3],31,3],
+    [[C4,E4,G4],34,2],[[G3,B3,D4],36,2],[[A3,C4,E4],38,2],[[E3,G3,B3],40,2],
+    [[F3,A3,C4],42,2],[[G3,B3,D4],44,2],[[C4,E4,G4],46,2],[[G3,B3,D4],48,2],
+    [[A3,C4,E4],50,2],[[F3,A3,C4],52,2],[[G3,B3,D4],54,2],[[C4,E4,G4],56,4],
+  ];
+  pads.forEach(([fs,t,d])=>fs.forEach(f=>n(f,t,d,'sine',0.04)));
+  pads.forEach(([fs,t,d])=>fs.forEach(f=>n(f,t+56,d,'sine',0.04)));
+  pads.forEach(([fs,t,d])=>fs.forEach(f=>n(f,t+112,d,'sine',0.04)));
+
+  return notes;
+}
+
+const songNotes = generateSong();
+
+// ===== AUDIO ENGINE =====
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function scheduleAllNotes(offset = 0) {
+  songNotes.forEach(([freq, time, dur, type, vol]) => {
+    const t = audioCtx.currentTime + time - offset;
+    if (t < 0) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    const atk = 0.02, rel = 0.1;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol, t + atk);
+    gain.gain.setValueAtTime(vol, t + dur - rel);
+    gain.gain.linearRampToValueAtTime(0, t + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.01);
+    scheduledNotes.push(osc);
+  });
+}
+
+function stopAllNotes() {
+  scheduledNotes.forEach(o => { try { o.stop(); } catch(e) {} });
+  scheduledNotes = [];
+}
+
+// ===== PLAYER CONTROLS =====
 function openPlayer() {
   document.getElementById('playerOverlay').classList.add('active');
+  initAudio();
+  startSong();
 }
 
 function closePlayer() {
+  stopSong();
   document.getElementById('playerOverlay').classList.remove('active');
+}
+
+function togglePlay() { isPlaying ? pauseSong() : startSong(); }
+
+function startSong() {
+  initAudio();
+  isPlaying = true;
+  songStartTime = audioCtx.currentTime - songPausedAt;
+  scheduleAllNotes(songPausedAt);
+  document.getElementById('playPauseBtn').textContent = '⏸';
+  document.getElementById('eqContainer').classList.add('playing');
+  updateProgress();
+  updateLyrics();
+}
+
+function pauseSong() {
+  isPlaying = false;
+  songPausedAt = audioCtx.currentTime - songStartTime;
+  stopAllNotes();
+  document.getElementById('playPauseBtn').textContent = '▶';
+  document.getElementById('eqContainer').classList.remove('playing');
+  cancelAnimationFrame(animationFrameId);
+}
+
+function stopSong() {
+  isPlaying = false;
+  songPausedAt = 0;
+  stopAllNotes();
+  document.getElementById('playPauseBtn').textContent = '▶';
+  document.getElementById('eqContainer').classList.remove('playing');
+  document.getElementById('progressFill').style.width = '0%';
+  cancelAnimationFrame(animationFrameId);
+  renderLyrics(-1);
+}
+
+function seekSong(e) {
+  const bar = document.getElementById('progressBar');
+  const rect = bar.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  const seekTime = pct * SONG_DURATION;
+  if (isPlaying) {
+    stopAllNotes();
+    songPausedAt = seekTime;
+    songStartTime = audioCtx.currentTime - seekTime;
+    scheduleAllNotes(seekTime);
+  } else {
+    songPausedAt = seekTime;
+  }
+}
+
+// ===== PROGRESS & LYRICS =====
+function updateProgress() {
+  if (!isPlaying) return;
+  const elapsed = audioCtx.currentTime - songStartTime;
+  const pct = Math.min((elapsed / SONG_DURATION) * 100, 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  if (pct >= 100) { stopSong(); launchConfetti(); return; }
+  updateLyrics();
+  animationFrameId = requestAnimationFrame(updateProgress);
+}
+
+function renderLyrics(activeIdx) {
+  const c = document.getElementById('lyricsContainer');
+  c.innerHTML = '';
+  SONG_LYRICS.forEach((line, i) => {
+    const div = document.createElement('div');
+    div.className = 'lyric-line' + (i === activeIdx ? ' active' : i < activeIdx ? ' past' : '');
+    div.textContent = line.text;
+    c.appendChild(div);
+    if (line.verse && i === activeIdx) {
+      const v = document.createElement('div');
+      v.className = 'lyric-verse';
+      v.textContent = line.verse;
+      c.appendChild(v);
+    }
+  });
+  const active = c.querySelector('.active');
+  if (active) active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function updateLyrics() {
+  const elapsed = audioCtx.currentTime - songStartTime;
+  let idx = -1;
+  for (let i = SONG_LYRICS.length - 1; i >= 0; i--) {
+    if (elapsed >= SONG_LYRICS[i].time) { idx = i; break; }
+  }
+  renderLyrics(idx);
 }
 
 </script>
